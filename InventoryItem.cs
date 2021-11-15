@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace POReportGenerator
 {
-    class InventoryObject
+    class InventoryItem
     {
 
     }
