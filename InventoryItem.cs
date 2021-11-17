@@ -8,6 +8,10 @@ namespace POReportGenerator
 {
     class InventoryItem
     {
-
+        private int quantity;
+        private string modelId;
+        private string serialNumber;
+        private int suggestedPrice;
+        private string location;
     }
 }
