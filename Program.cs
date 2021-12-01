@@ -15,8 +15,10 @@ namespace POReportGenerator
             string po = Console.ReadLine();
             Console.Write("Please enter a Total: ");
             int desiredTotal = int.Parse(Console.ReadLine());
-            Console.Write("Please enter hte number of bad drives: ");
+            Console.Write("Please enter the number of bad drives: ");
             int badDrives = int.Parse(Console.ReadLine());
+            Console.Write("Please enter the number of SAS drives: ");
+            int sasdrives = int.Parse(Console.ReadLine());
             Console.WriteLine();
 
             string curPath = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
@@ -25,6 +27,8 @@ namespace POReportGenerator
             {
                 Dictionary<string, int> threeTotals = new Dictionary<string, int>();
                 Dictionary<string, int> twoTotals = new Dictionary<string, int>();
+                Dictionary<string, int> oneTotals = new Dictionary<string, int>();
+                Dictionary<string, int> M2Totals = new Dictionary<string, int>();
                 Dictionary<string, int> unknownTotals = new Dictionary<string, int>();
                 List<PhysicalDisk> pending = new List<PhysicalDisk>();
 
@@ -43,14 +47,14 @@ namespace POReportGenerator
                     else
                         sizestr = p.Size.ToString();
                     sizeint = int.Parse(sizestr);
-                    if (p.FormFactor == "")
+                    if (p.FormFactor == "" || p.FormFactor == "Unknown" || p.FormFactor == null)
                     {
                         if (sizeint <= 250)
                         {
                             if (unknownTotals.ContainsKey(sizestr))
                                 unknownTotals[sizestr]++;
                             else
-                                unknownTotals.Add(sizestr, 1);
+                                unknownTotals.Add(sizestr, 1); 
                         }
                         else if (sizeint < 320)
                         {
@@ -115,6 +119,54 @@ namespace POReportGenerator
                                 twoTotals.Add(p.ModelId, 1);
                         }
                     }
+                    else if (p.FormFactor == "1.8")
+                    {
+                        if (sizeint <= 250)
+                        {
+                            if (oneTotals.ContainsKey(sizestr))
+                                oneTotals[sizestr]++;
+                            else
+                                oneTotals.Add(sizestr, 1);
+                        }
+                        else if (sizeint < 320)
+                        {
+                            if (oneTotals.ContainsKey(p.ModelId.Split(' ')[0]))
+                                oneTotals[p.ModelId.Split(' ')[0]]++;
+                            else
+                                oneTotals.Add(p.ModelId.Split(' ')[0], 1);
+                        }
+                        else
+                        {
+                            if (oneTotals.ContainsKey(p.ModelId))
+                                oneTotals[p.ModelId]++;
+                            else
+                                oneTotals.Add(p.ModelId, 1);
+                        }
+                    }
+                    else if (p.FormFactor.Contains("M2"))
+                    {
+                        if (sizeint <= 250)
+                        {
+                            if (M2Totals.ContainsKey(sizestr))
+                                M2Totals[sizestr]++;
+                            else
+                                M2Totals.Add(sizestr, 1);
+                        }
+                        else if (sizeint < 320)
+                        {
+                            if (M2Totals.ContainsKey(p.ModelId.Split(' ')[0]))
+                                M2Totals[p.ModelId.Split(' ')[0]]++;
+                            else
+                                M2Totals.Add(p.ModelId.Split(' ')[0], 1);
+                        }
+                        else
+                        {
+                            if (M2Totals.ContainsKey(p.ModelId))
+                                M2Totals[p.ModelId]++;
+                            else
+                                M2Totals.Add(p.ModelId, 1);
+                        }
+                    }
                     else
                     {
                         if (sizeint <= 250)
@@ -146,11 +198,25 @@ namespace POReportGenerator
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
+
                 Console.WriteLine("\n2.5\": ");
                 foreach(KeyValuePair<string, int> kv in twoTotals)
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
+
+                Console.WriteLine("\n1.8\": ");
+                foreach (KeyValuePair<string, int> kv in oneTotals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nM2\": ");
+                foreach (KeyValuePair<string, int> kv in M2Totals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
                 Console.WriteLine("\nUnknown: ");
                 foreach (KeyValuePair<string, int> kv in unknownTotals)
                 {
@@ -159,11 +225,12 @@ namespace POReportGenerator
 
                 Console.WriteLine("\nDesired total: " + desiredTotal);
                 Console.WriteLine("Bad drives: " + badDrives);
-                Console.WriteLine("Actual total: " + (threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value)));
-                Console.WriteLine("Missing: " + (desiredTotal - (badDrives + threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value))));
+                Console.WriteLine("SAS Drives: " + sasdrives);
+                Console.WriteLine("Actual total: " + (threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value)));
+                Console.WriteLine("Missing: " + (desiredTotal - (sasdrives + badDrives + threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value))));
             }
             else
-                Console.WriteLine("No such PO found.\nExiting...");
+                Console.WriteLine("No such PO found.\nExiting...");  
         }
     }
 }
