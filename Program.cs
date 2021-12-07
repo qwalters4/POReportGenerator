@@ -25,6 +25,24 @@ namespace POReportGenerator
 
             if (Directory.Exists(Path.Combine(@curPath, "Archive", po)))
             {
+                //////////////////////////////////////////////////
+                FileStream ostrm;
+                StreamWriter writer;
+                TextWriter oldOut = Console.Out;
+                try
+                {
+                    ostrm = new FileStream((Path.Combine(@curPath, "Archive", po) + "\\InventoryReport.txt"), FileMode.OpenOrCreate, FileAccess.Write);
+                    writer = new StreamWriter(ostrm);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Cannot open InventoryReport.txt for writing");
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                Console.SetOut(writer);
+                //////////////////////////////////////////////////
+
                 Dictionary<string, int> threeTotals = new Dictionary<string, int>();
                 Dictionary<string, int> twoTotals = new Dictionary<string, int>();
                 Dictionary<string, int> oneTotals = new Dictionary<string, int>();
@@ -228,9 +246,130 @@ namespace POReportGenerator
                 Console.WriteLine("SAS Drives: " + sasdrives);
                 Console.WriteLine("Actual total: " + (threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value)));
                 Console.WriteLine("Missing: " + (desiredTotal - (sasdrives + badDrives + threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value))));
+
+                Console.SetOut(oldOut);
+                writer.Close();
+                ostrm.Close();
+
+                //////////////////////////////////////////////////
+                FileStream secondostrm;
+                StreamWriter secondwriter;
+                TextWriter secondOut = Console.Out;
+                try
+                {
+                    secondostrm = new FileStream((Path.Combine(@curPath, "Archive", po) + "\\WhiteLabelReport.txt"), FileMode.OpenOrCreate, FileAccess.Write);
+                    secondwriter = new StreamWriter(secondostrm);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Cannot open InventoryReport.txt for writing");
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                Console.SetOut(secondwriter);
+                //////////////////////////////////////////////////
+
+                unknownTotals.Clear();
+                threeTotals.Clear();
+                twoTotals.Clear();
+                oneTotals.Clear();
+                M2Totals.Clear();
+
+                foreach (PhysicalDisk p in pending)
+                {
+                    if (p.Size.ToString().Length > 4)
+                        sizestr = p.Size.ToString().Substring(0, p.Size.ToString().Length - 9);
+                    else
+                        sizestr = p.Size.ToString();
+                    sizeint = int.Parse(sizestr);
+                    if (p.FormFactor == "" || p.FormFactor == "Unknown" || p.FormFactor == null)
+                    {
+                        if (unknownTotals.ContainsKey(sizestr))
+                            unknownTotals[sizestr]++;
+                        else
+                            unknownTotals.Add(sizestr, 1);
+                    }
+                    else if (p.FormFactor == "3.5")
+                    {
+                        if (threeTotals.ContainsKey(sizestr))
+                            threeTotals[sizestr]++;
+                        else
+                            threeTotals.Add(sizestr, 1);
+                    }
+                    else if (p.FormFactor == "2.5")
+                    {
+                        if (twoTotals.ContainsKey(sizestr))
+                            twoTotals[sizestr]++;
+                        else
+                            twoTotals.Add(sizestr, 1);
+                    }
+                    else if (p.FormFactor == "1.8")
+                    {
+                        if (oneTotals.ContainsKey(sizestr))
+                            oneTotals[sizestr]++;
+                        else
+                            oneTotals.Add(sizestr, 1);
+                    }
+                    else if (p.FormFactor.Contains("M2"))
+                    {
+                        
+                        if (M2Totals.ContainsKey(sizestr))
+                            M2Totals[sizestr]++;
+                        else
+                            M2Totals.Add(sizestr, 1);
+                    }
+                    else
+                    {
+                        if (unknownTotals.ContainsKey(sizestr))
+                            unknownTotals[sizestr]++;
+                        else
+                            unknownTotals.Add(sizestr, 1);
+                    }
+                }
+
+                Console.WriteLine("\n3.5\": ");
+                foreach (KeyValuePair<string, int> kv in threeTotals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\n2.5\": ");
+                foreach (KeyValuePair<string, int> kv in twoTotals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\n1.8\": ");
+                foreach (KeyValuePair<string, int> kv in oneTotals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nM2\": ");
+                foreach (KeyValuePair<string, int> kv in M2Totals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nUnknown: ");
+                foreach (KeyValuePair<string, int> kv in unknownTotals)
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nDesired total: " + desiredTotal);
+                Console.WriteLine("Bad drives: " + badDrives);
+                Console.WriteLine("SAS Drives: " + sasdrives);
+                Console.WriteLine("Actual total: " + (threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value)));
+                Console.WriteLine("Missing: " + (desiredTotal - (sasdrives + badDrives + threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value))));
+
+                Console.SetOut(secondOut);
+                secondwriter.Close();
+                secondostrm.Close();
+
             }
             else
-                Console.WriteLine("No such PO found.\nExiting...");  
+                Console.WriteLine("No such PO found.\nExiting...");
         }
     }
 }
