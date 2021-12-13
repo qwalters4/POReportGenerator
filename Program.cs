@@ -25,6 +25,7 @@ namespace POReportGenerator
 
             if (Directory.Exists(Path.Combine(@curPath, "Archive", po)))
             {
+                Console.WriteLine("PO successfuly accessed");
                 Dictionary<string, int> threeTotals = new Dictionary<string, int>();
                 Dictionary<string, int> twoTotals = new Dictionary<string, int>();
                 Dictionary<string, int> oneTotals = new Dictionary<string, int>();
