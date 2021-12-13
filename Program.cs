@@ -21,46 +21,31 @@ namespace POReportGenerator
             int sasdrives = int.Parse(Console.ReadLine());
             Console.WriteLine();
 
-            string curPath = System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string curPath = @"\\TRUENAS\DiskTesting";
 
             if (Directory.Exists(Path.Combine(@curPath, "Archive", po)))
             {
-                //////////////////////////////////////////////////
-                FileStream ostrm;
-                StreamWriter writer;
-                TextWriter oldOut = Console.Out;
-                try
-                {
-                    ostrm = new FileStream((Path.Combine(@curPath, "Archive", po) + "\\InventoryReport.txt"), FileMode.OpenOrCreate, FileAccess.Write);
-                    writer = new StreamWriter(ostrm);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Cannot open InventoryReport.txt for writing");
-                    Console.WriteLine(e.Message);
-                    return;
-                }
-                Console.SetOut(writer);
-                //////////////////////////////////////////////////
-
                 Dictionary<string, int> threeTotals = new Dictionary<string, int>();
                 Dictionary<string, int> twoTotals = new Dictionary<string, int>();
                 Dictionary<string, int> oneTotals = new Dictionary<string, int>();
                 Dictionary<string, int> M2Totals = new Dictionary<string, int>();
                 Dictionary<string, int> unknownTotals = new Dictionary<string, int>();
                 List<PhysicalDisk> pending = new List<PhysicalDisk>();
+                int i = 0;
 
                 foreach (string file in Directory.EnumerateFiles(Path.Combine(@curPath, "Archive", po), "*.json"))
                 {
                     PhysicalDisk temp = JsonConvert.DeserializeObject<PhysicalDisk>(File.ReadAllText(file));            
                     pending.Add(temp);
+                    Console.WriteLine("Drive#: " + i);
+                    i++;
                 }
 
                 string sizestr;
                 int sizeint;
                 foreach(PhysicalDisk p in pending)
                 {
-                    if (p.Size.ToString().Length > 4)
+                    if (p.Size.ToString().Length >= 10)
                         sizestr = p.Size.ToString().Substring(0, p.Size.ToString().Length - 9);
                     else
                         sizestr = p.Size.ToString();
@@ -212,31 +197,83 @@ namespace POReportGenerator
                 }
 
                 Console.WriteLine("\n3.5\": ");
-                foreach(KeyValuePair<string,int> kv in threeTotals)
+                foreach(KeyValuePair<string,int> kv in threeTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\n2.5\": ");
-                foreach(KeyValuePair<string, int> kv in twoTotals)
+                foreach(KeyValuePair<string, int> kv in twoTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\n1.8\": ");
-                foreach (KeyValuePair<string, int> kv in oneTotals)
+                foreach (KeyValuePair<string, int> kv in oneTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\nM2\": ");
-                foreach (KeyValuePair<string, int> kv in M2Totals)
+                foreach (KeyValuePair<string, int> kv in M2Totals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\nUnknown: ");
-                foreach (KeyValuePair<string, int> kv in unknownTotals)
+                foreach (KeyValuePair<string, int> kv in unknownTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nDesired total: " + desiredTotal);
+                Console.WriteLine("Bad drives: " + badDrives);
+                Console.WriteLine("SAS Drives: " + sasdrives);
+                Console.WriteLine("Actual total: " + (threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value)));
+                Console.WriteLine("Missing: " + (desiredTotal - (sasdrives + badDrives + threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value))));
+                //////////////////////////////////////////////////
+                FileStream ostrm;
+                StreamWriter writer;
+                TextWriter oldOut = Console.Out;
+                try
+                {
+                    ostrm = new FileStream((Path.Combine(@curPath, "Archive", po) + "\\InventoryReport.txt"), FileMode.OpenOrCreate, FileAccess.Write);
+                    writer = new StreamWriter(ostrm);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Cannot open InventoryReport.txt for writing");
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                Console.SetOut(writer);
+                //////////////////////////////////////////////////
+                Console.WriteLine("\n3.5\": ");
+                foreach (KeyValuePair<string, int> kv in threeTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\n2.5\": ");
+                foreach (KeyValuePair<string, int> kv in twoTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\n1.8\": ");
+                foreach (KeyValuePair<string, int> kv in oneTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nM2\": ");
+                foreach (KeyValuePair<string, int> kv in M2Totals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nUnknown: ");
+                foreach (KeyValuePair<string, int> kv in unknownTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
@@ -251,23 +288,7 @@ namespace POReportGenerator
                 writer.Close();
                 ostrm.Close();
 
-                //////////////////////////////////////////////////
-                FileStream secondostrm;
-                StreamWriter secondwriter;
-                TextWriter secondOut = Console.Out;
-                try
-                {
-                    secondostrm = new FileStream((Path.Combine(@curPath, "Archive", po) + "\\WhiteLabelReport.txt"), FileMode.OpenOrCreate, FileAccess.Write);
-                    secondwriter = new StreamWriter(secondostrm);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Cannot open InventoryReport.txt for writing");
-                    Console.WriteLine(e.Message);
-                    return;
-                }
-                Console.SetOut(secondwriter);
-                //////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 unknownTotals.Clear();
                 threeTotals.Clear();
@@ -277,7 +298,7 @@ namespace POReportGenerator
 
                 foreach (PhysicalDisk p in pending)
                 {
-                    if (p.Size.ToString().Length > 4)
+                    if (p.Size.ToString().Length >= 10)
                         sizestr = p.Size.ToString().Substring(0, p.Size.ToString().Length - 9);
                     else
                         sizestr = p.Size.ToString();
@@ -328,31 +349,85 @@ namespace POReportGenerator
                 }
 
                 Console.WriteLine("\n3.5\": ");
-                foreach (KeyValuePair<string, int> kv in threeTotals)
+                foreach (KeyValuePair<string, int> kv in threeTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\n2.5\": ");
-                foreach (KeyValuePair<string, int> kv in twoTotals)
+                foreach (KeyValuePair<string, int> kv in twoTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\n1.8\": ");
-                foreach (KeyValuePair<string, int> kv in oneTotals)
+                foreach (KeyValuePair<string, int> kv in oneTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\nM2\": ");
-                foreach (KeyValuePair<string, int> kv in M2Totals)
+                foreach (KeyValuePair<string, int> kv in M2Totals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
 
                 Console.WriteLine("\nUnknown: ");
-                foreach (KeyValuePair<string, int> kv in unknownTotals)
+                foreach (KeyValuePair<string, int> kv in unknownTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nDesired total: " + desiredTotal);
+                Console.WriteLine("Bad drives: " + badDrives);
+                Console.WriteLine("SAS Drives: " + sasdrives);
+                Console.WriteLine("Actual total: " + (threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value)));
+                Console.WriteLine("Missing: " + (desiredTotal - (sasdrives + badDrives + threeTotals.Sum(x => x.Value) + twoTotals.Sum(x => x.Value) + unknownTotals.Sum(x => x.Value) + M2Totals.Sum(x => x.Value) + oneTotals.Sum(x => x.Value))));
+
+                //////////////////////////////////////////////////
+                FileStream secondostrm;
+                StreamWriter secondwriter;
+                TextWriter secondOut = Console.Out;
+                try
+                {
+                    secondostrm = new FileStream((Path.Combine(@curPath, "Archive", po) + "\\WhiteLabelReport.txt"), FileMode.OpenOrCreate, FileAccess.Write);
+                    secondwriter = new StreamWriter(secondostrm);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Cannot open InventoryReport.txt for writing");
+                    Console.WriteLine(e.Message);
+                    return;
+                }
+                Console.SetOut(secondwriter);
+                //////////////////////////////////////////////////
+
+                Console.WriteLine("\n3.5\": ");
+                foreach (KeyValuePair<string, int> kv in threeTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\n2.5\": ");
+                foreach (KeyValuePair<string, int> kv in twoTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\n1.8\": ");
+                foreach (KeyValuePair<string, int> kv in oneTotals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nM2\": ");
+                foreach (KeyValuePair<string, int> kv in M2Totals.OrderBy(i => i.Key))
+                {
+                    Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
+                }
+
+                Console.WriteLine("\nUnknown: ");
+                foreach (KeyValuePair<string, int> kv in unknownTotals.OrderBy(i => i.Key))
                 {
                     Console.WriteLine("\t" + kv.Key + ": " + kv.Value);
                 }
